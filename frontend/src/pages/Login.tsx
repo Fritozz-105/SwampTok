@@ -1,9 +1,14 @@
-
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const Login = () => {
     return (
         <div>
-        <h1 className="text-2xl text-black">I am Login</h1>
+            <Header />
+
+            <h1>I am Login</h1>
+
+            <Footer />
         </div>
     )
 }
