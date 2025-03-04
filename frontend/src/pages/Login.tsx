@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import BannerImage from '../../public/assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../../public/assets/google-icon.svg';
 
-const LoginPage: React.FC = () => {
+const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -235,4 +235,4 @@ const LoginPage: React.FC = () => {
     );
 };
 
-export default LoginPage;
+export default Login;
