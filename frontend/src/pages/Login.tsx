@@ -14,7 +14,7 @@ const Login: React.FC = () => {
         password: ''
     });
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
-    // const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     // const [authError, setAuthError] = useState<string | null>(null);
 
     // Validation functions
@@ -76,6 +76,7 @@ const Login: React.FC = () => {
             console.log('Login attempt with:', formData);
 
             {/* Add Login Logic Here */}
+            setIsLoading(true);
         }
     };
 
