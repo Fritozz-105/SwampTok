@@ -14,8 +14,8 @@ const Login: React.FC = () => {
         password: ''
     });
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [authError, setAuthError] = useState<string | null>(null);
+    // const [isLoading, setIsLoading] = useState<boolean>(false);
+    // const [authError, setAuthError] = useState<string | null>(null);
 
     // Validation functions
     const validateEmail = (email: string): boolean => {
