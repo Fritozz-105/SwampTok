@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import BannerImage from '../../public/assets/university-of-florida-entrance.jpg';
-import GoogleIcon from '../../public/assets/google-icon.svg';
+import BannerImage from '../assets/university-of-florida-entrance.jpg';
+import GoogleIcon from '../assets/google-icon.svg';
 
 const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -15,18 +15,11 @@ const Login: React.FC = () => {
     });
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    // const [authError, setAuthError] = useState<string | null>(null);
 
     // Validation functions
     const validateEmail = (email: string): boolean => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
-    };
-
-    const validatePassword = (password: string): boolean => {
-        // At least 8 characters, 1 uppercase, 1 symbol
-        const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/;
-        return passwordRegex.test(password);
     };
 
     // Handle Google Sign In
@@ -64,9 +57,9 @@ const Login: React.FC = () => {
             newErrors.email = 'Please enter a valid email address';
         }
 
-        // Validate password
-        if (!validatePassword(formData.password)) {
-            newErrors.password = 'Password must be at least 8 characters with 1 uppercase letter and 1 symbol';
+        // Checks if password is empty
+        if (!formData.password) {
+            newErrors.password = 'Password is required';
         }
 
         setErrors(newErrors);
@@ -74,14 +67,13 @@ const Login: React.FC = () => {
         // If no errors, proceed with login
         if (!newErrors.email && !newErrors.password) {
             console.log('Login attempt with:', formData);
-
-            {/* Add Login Logic Here */}
             setIsLoading(true);
+            // Add Login Logic Here
         }
     };
 
     useEffect(() => {
-        const isValid = validateEmail(formData.email) && validatePassword(formData.password);
+        const isValid = validateEmail(formData.email) && formData.password.length > 0;
         setIsFormValid(isValid);
     }, [formData]);
 
@@ -124,9 +116,7 @@ const Login: React.FC = () => {
 
                         <h2 className="text-3xl font-bold mb-8">Sign in</h2>
 
-
-                        {/* Implement Google Sign In */}
-
+                        {/* Google Sign In */}
                         <div className="space-y-4 mb-8">
                             <button
                                 type='button'
@@ -153,6 +143,7 @@ const Login: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} noValidate>
+                            {/* Email Field */}
                             <div className="mb-4">
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                     Your Email Address
@@ -173,6 +164,7 @@ const Login: React.FC = () => {
                                 )}
                             </div>
 
+                            {/* Password Field */}
                             <div className="mb-2">
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                                     Your Password
@@ -202,8 +194,7 @@ const Login: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Handle Forget Password */}
-
+                            {/* Forget Password Link */}
                             <div className="mb-6 text-right">
                                 <Link to="/forgot-password" className="text-sm text-gray-600 hover:text-black">
                                 Forget your password?
@@ -212,17 +203,17 @@ const Login: React.FC = () => {
 
                             <button
                                 type="submit"
+                                disabled={isLoading}
                                 className={`w-full font-medium py-3 px-4 rounded-md transition-colors mb-4 ${
                                     isFormValid
                                         ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                         : 'bg-gray-300 text-gray-800'
-                                }`}
+                                } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Sign in
+                                {isLoading ? 'Signing in...' : 'Sign in'}
                             </button>
 
-                            {/* Handle Sign Up */}
-
+                            {/* Sign Up Link */}
                             <div className="text-center">
                                 <p className="text-sm text-gray-600">
                                 Don't have an account? <Link to="/signup" className="text-black font-medium">Sign up</Link>
