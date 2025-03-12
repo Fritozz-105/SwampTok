@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import Linkedin from '../../public/assets/linkedin-logo.png';
-import Github from '../../public/assets/github-logo.svg';
+import Linkedin from '../assets/linkedin-logo.png';
+import Github from '../assets/github-logo.svg';
 
 const Footer: React.FC = () => {
     return (
