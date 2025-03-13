@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { SignUpSchema, SignUpFormData, validateAuth, calculateAge } from '../pages/Auth';
+import { auth } from '../tools/firebase';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
 
 const SignUp: React.FC = () => {
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
     const [formData, setFormData] = useState<SignUpFormData>({
@@ -56,6 +59,30 @@ const SignUp: React.FC = () => {
             setIsLoading(true);
 
             // Add Signup Logic Here
+            register();
+        }
+    };
+
+    const register = async () => {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                formData.email,
+                formData.password
+            );
+
+            if (userCredential.user) {
+                await updateProfile(userCredential.user, {
+                    displayName: formData.fullName
+                });
+
+                console.log('User registered:', userCredential.user);
+                navigate('/');
+            }
+        } catch (error) {
+            console.error('Error registering user:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
