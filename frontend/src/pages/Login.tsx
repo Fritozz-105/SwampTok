@@ -1,26 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { LoginSchema, LoginFormData, validateAuth } from '../pages/Auth';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
 
 const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<LoginFormData>({
         email: '',
         password: ''
     });
-    const [errors, setErrors] = useState({
-        email: '',
-        password: ''
-    });
+    const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    // Validation functions
-    const validateEmail = (email: string): boolean => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
 
     // Handle Google Sign In
     const handleGoogleSignIn = async () => {
@@ -36,44 +28,34 @@ const Login: React.FC = () => {
         }));
 
         // Clear error when user starts typing
-        setErrors(prev => ({
-            ...prev,
-            [name]: ''
-        }));
+        if (errors[name as keyof LoginFormData]) {
+            setErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+
+        // Validate form on change
+        const { isValid } = validateAuth(LoginSchema, {...formData, [name]: value});
+        setIsFormValid(isValid);
     };
 
     // Validate form on submit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Reset errors
-        const newErrors = {
-            email: '',
-            password: ''
-        };
+        const validation = validateAuth(LoginSchema, formData, setErrors);
 
-        // Validate email
-        if (!validateEmail(formData.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-
-        // Checks if password is empty
-        if (!formData.password) {
-            newErrors.password = 'Password is required';
-        }
-
-        setErrors(newErrors);
-
-        // If no errors, proceed with login
-        if (!newErrors.email && !newErrors.password) {
+        if (validation.isValid) {
             console.log('Login attempt with:', formData);
             setIsLoading(true);
+
             // Add Login Logic Here
         }
     };
 
     useEffect(() => {
-        const isValid = validateEmail(formData.email) && formData.password.length > 0;
+        const isValid = validateAuth(LoginSchema, formData).isValid;
         setIsFormValid(isValid);
     }, [formData]);
 
