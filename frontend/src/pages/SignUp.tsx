@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { SignUpSchema, SignUpFormData, validateAuth, calculateAge } from '../pages/Auth';
 import { auth } from '../tools/firebase';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
@@ -18,13 +19,9 @@ const SignUp: React.FC = () => {
         dateOfBirth: ''
     });
     const [errors, setErrors] = useState<Partial<Record<keyof SignUpFormData, string>>>({});
+    const [authError, setAuthError] = useState<string>('');
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    // Handle Google Sign Up
-    const handleGoogleSignUp = async () => {
-        console.log('Google Sign Up');
-    };
 
     // Handle form input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,8 +60,64 @@ const SignUp: React.FC = () => {
         }
     };
 
-    const register = async () => {
+    {/* FIX ME: Add Google Sign-Up Functionality */}
+    const handleGoogleSignUp = async () => {
         try {
+            setIsLoading(true);
+            setAuthError('');
+
+            const provider = new GoogleAuthProvider();
+
+            // Add scopes for better user data acesss
+            provider.addScope('profile');
+            provider.addScope('email');
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+
+            const result = await signInWithPopup(auth, provider);
+
+            console.log("Google sign-up successful:", result.user);
+            navigate('/');
+        } catch (error) {
+            console.error("Error during Google sign-up:", error);
+
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        // User closed the popup, no need to show error
+                        console.log("Popup was closed by the user");
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        // Another popup is already open
+                        console.log("Popup request was cancelled");
+                        break;
+                    case 'auth/popup-blocked':
+                        setAuthError('Sign-up popup was blocked by your browser. Please enable popups for this site.');
+                        break;
+                    case 'auth/account-exists-with-different-credential':
+                        setAuthError('An account already exists with the same email. Try signing in instead.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    default:
+                        setAuthError(`Failed to sign up with Google: ${error.message}`);
+                        break;
+                }
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const register = async () => {
+        // Attempts to create user account with email and password
+        try {
+            // Sets state to loading to prevent multiple submissions
+            setIsLoading(true);
+            setAuthError('');
+
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
                 formData.email,
@@ -77,10 +130,29 @@ const SignUp: React.FC = () => {
                 });
 
                 console.log('User registered:', userCredential.user);
+
+                // Redirect user to home page after successful registration
                 navigate('/');
             }
         } catch (error) {
             console.error('Error registering user:', error);
+
+            // Display specific error message to user
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        setAuthError('This email is already registered. Please sign in instead.');
+                        break;
+                    case 'auth/weak-password':
+                        setAuthError('Please use a stronger password.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    default:
+                        setAuthError('Failed to create account. Please try again.');
+                }
+            }
         } finally {
             setIsLoading(false);
         }
@@ -275,6 +347,14 @@ const SignUp: React.FC = () => {
                                 )}
                             </div>
 
+                            {/* Auth Error Message */}
+                            {authError && (
+                                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                    <p className="text-sm text-red-600">{authError}</p>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
