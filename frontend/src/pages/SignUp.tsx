@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
+import { signupUser } from '../api/api.ts';
 
 const SignUp: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -107,7 +108,7 @@ const SignUp: React.FC = () => {
     };
 
     // Validate form on submit
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Reset errors
@@ -147,6 +148,7 @@ const SignUp: React.FC = () => {
         setErrors(newErrors);
 
         // If no errors, proceed with signup
+        
         if (!newErrors.fullName && !newErrors.email && !newErrors.password &&
             !newErrors.confirmPassword && !newErrors.dateOfBirth) {
             console.log('Signup attempt with:', formData);
@@ -154,6 +156,23 @@ const SignUp: React.FC = () => {
 
             {/* Add Signup Logic Here */}
             setIsLoading(true);
+            try {
+                console.log('Trying to send data.')
+                const result = await signupUser({
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                    dateOfBirth: formData.dateOfBirth
+                });
+                console.log('Signup successful:', result);
+                // Handle success (maybe redirect to login or dashboard)
+            } catch (error) {
+                console.error('Signup failed:', error);
+                // Handle error (show error message to user)
+            } finally {
+                setIsLoading(false); // Stop loading
+            }
+
         }
     };
 
