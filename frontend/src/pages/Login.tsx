@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { FirebaseError } from 'firebase/app';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../tools/firebase';
 import { LoginSchema, LoginFormData, validateAuth } from '../pages/Auth';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
 
 const Login: React.FC = () => {
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [formData, setFormData] = useState<LoginFormData>({
         email: '',
         password: ''
     });
     const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
+    const [authError, setAuthError] = useState<string>('');
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    // Handle Google Sign In
-    const handleGoogleSignIn = async () => {
-        console.log('Google Sign In');
-    };
 
     // Handle form input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +35,11 @@ const Login: React.FC = () => {
             }));
         }
 
+        // Clear auth error if user modifies fields after an error
+        if (authError) {
+            setAuthError('');
+        }
+
         // Validate form on change
         const { isValid } = validateAuth(LoginSchema, {...formData, [name]: value});
         setIsFormValid(isValid);
@@ -48,9 +53,111 @@ const Login: React.FC = () => {
 
         if (validation.isValid) {
             console.log('Login attempt with:', formData);
-            setIsLoading(true);
 
             // Add Login Logic Here
+            login();
+        }
+    };
+
+    // Handle Google Sign In
+    const handleGoogleSignIn = async () => {
+        try {
+            setIsLoading(true);
+            setAuthError('');
+
+            const provider = new GoogleAuthProvider();
+
+            // Add scopes for better user data access
+            provider.addScope('profile');
+            provider.addScope('email');
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+
+            const result = await signInWithPopup(auth, provider);
+            console.log('Google sign-in successful:', result.user);
+
+            // Redirect user to home page after successful login
+            navigate('/');
+        } catch (error) {
+            console.error('Error during Google sign-in:', error);
+
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        // User closed the popup, no need to show error
+                        console.log('Popup was closed by the user');
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        // Another popup is already open
+                        console.log('Popup request was cancelled');
+                        break;
+                    case 'auth/popup-blocked':
+                        setAuthError('Sign-in popup was blocked by your browser. Please enable popups for this site.');
+                        break;
+                    case 'auth/account-exists-with-different-credential':
+                        setAuthError('An account already exists with a different sign-in method for this email.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    case 'auth/user-disabled':
+                        setAuthError('This account has been disabled. Please contact support.');
+                        break;
+                    default:
+                        setAuthError(`Failed to sign in with Google: ${error.message}`);
+                        break;
+                }
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Handle login with email and password
+    const login = async () => {
+        try {
+            setIsLoading(true);
+            setAuthError('');
+
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                formData.email,
+                formData.password
+            );
+
+            console.log('User logged in:', userCredential.user);
+
+            // Redirect user to home page after successful login
+            navigate('/');
+        } catch (error) {
+            console.error('Error signing in:', error);
+
+            // Display specific error message to user
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential':
+                        setAuthError('Invalid email or password. Please try again.');
+                        break;
+                    case 'auth/user-disabled':
+                        setAuthError('This account has been disabled. Please contact support.');
+                        break;
+                    case 'auth/too-many-requests':
+                        setAuthError('Too many unsuccessful login attempts. Please try again later or reset your password.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    default:
+                        setAuthError('Failed to sign in. Please try again.');
+                        break;
+                }
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -183,6 +290,13 @@ const Login: React.FC = () => {
                                 </Link>
                             </div>
 
+                            {/* Auth Error Message */}
+                            {authError && (
+                                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                    <p className="text-sm text-red-600">{authError}</p>
+                                </div>
+                            )}
+                            {/* Submit Button */}
                             <button
                                 type="submit"
                                 disabled={isLoading}

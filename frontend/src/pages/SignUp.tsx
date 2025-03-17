@@ -39,6 +39,11 @@ const SignUp: React.FC = () => {
             }));
         }
 
+        // Clear auth error if user modifies fields after an error
+        if (authError) {
+            setAuthError('');
+        }
+
         // Validate form on change
         const { isValid } = validateAuth(SignUpSchema, {...formData, [name]: value});
         setIsFormValid(isValid);
@@ -53,14 +58,12 @@ const SignUp: React.FC = () => {
         if (validation.isValid) {
             console.log('Signup attempt with:', formData);
             console.log('User age:', calculateAge(formData.dateOfBirth));
-            setIsLoading(true);
 
             // Add Signup Logic Here
             register();
         }
     };
 
-    {/* FIX ME: Add Google Sign-Up Functionality */}
     const handleGoogleSignUp = async () => {
         try {
             setIsLoading(true);
@@ -68,7 +71,7 @@ const SignUp: React.FC = () => {
 
             const provider = new GoogleAuthProvider();
 
-            // Add scopes for better user data acesss
+            // Add scopes for better user data access
             provider.addScope('profile');
             provider.addScope('email');
             provider.setCustomParameters({
@@ -78,6 +81,8 @@ const SignUp: React.FC = () => {
             const result = await signInWithPopup(auth, provider);
 
             console.log("Google sign-up successful:", result.user);
+
+            // Redirect user to home page after successful registration
             navigate('/');
         } catch (error) {
             console.error("Error during Google sign-up:", error);
