@@ -1,95 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FirebaseError } from 'firebase/app';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { SignUpSchema, SignUpFormData, validateAuth, calculateAge } from '../pages/Auth';
+import { auth } from '../tools/firebase';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
 
 const SignUp: React.FC = () => {
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<SignUpFormData>({
         fullName: '',
         email: '',
         password: '',
         confirmPassword: '',
         dateOfBirth: ''
     });
-    const [errors, setErrors] = useState({
-        fullName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        dateOfBirth: ''
-    });
+    const [errors, setErrors] = useState<Partial<Record<keyof SignUpFormData, string>>>({});
+    const [authError, setAuthError] = useState<string>('');
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    // Validation functions
-    const validateFullName = (name: string): boolean => {
-        return name.trim().length >= 2;
-    };
-
-    const validateEmail = (email: string): boolean => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    const validatePassword = (password: string): boolean => {
-        // At least 8 characters, 1 uppercase, 1 symbol
-        const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/;
-        return passwordRegex.test(password);
-    };
-
-    const validateConfirmPassword = (password: string, confirmPassword: string): boolean => {
-        return password === confirmPassword;
-    };
-
-    const validateDateOfBirth = (dob: string): boolean => {
-        if (!dob) return false;
-
-        const birthDate = new Date(dob);
-        const today = new Date();
-
-        // Check if date is valid
-        if (isNaN(birthDate.getTime())) return false;
-
-        // Check if birthdate is in the future
-        if (birthDate > today) return false;
-
-        // Calculate age
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        // If birth month hasn't occurred this year yet, subtract a year
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            return age - 1 >= 17; // Must be at least 13 years old
-        }
-
-        return age >= 17; // Must be at least 17 years old
-    };
-
-    // Get age from DOB
-    const calculateAge = (dob: string): number => {
-        if (!dob) return 0;
-
-        const birthDate = new Date(dob);
-        const today = new Date();
-
-        if (isNaN(birthDate.getTime())) return 0;
-
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-
-        return age;
-    };
-
-    // Handle Google Sign Up
-    const handleGoogleSignUp = async () => {
-        console.log('Google Sign Up');
-    };
 
     // Handle form input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,74 +31,137 @@ const SignUp: React.FC = () => {
             [name]: value
         }));
 
-        // Clear error when user starts typing
-        setErrors(prev => ({
-            ...prev,
-            [name]: ''
-        }));
+        // Clear specific field error when user starts typing
+        if (errors[name as keyof SignUpFormData]) {
+            setErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+
+        // Clear auth error if user modifies fields after an error
+        if (authError) {
+            setAuthError('');
+        }
+
+        // Validate form on change
+        const { isValid } = validateAuth(SignUpSchema, {...formData, [name]: value});
+        setIsFormValid(isValid);
     };
 
     // Validate form on submit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Reset errors
-        const newErrors = {
-            fullName: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            dateOfBirth: ''
-        };
+        const validation = validateAuth(SignUpSchema, formData, setErrors);
 
-        // Validate full name
-        if (!validateFullName(formData.fullName)) {
-            newErrors.fullName = 'Please enter your full name (minimum 2 characters)';
-        }
-
-        // Validate email
-        if (!validateEmail(formData.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-
-        // Validate password
-        if (!validatePassword(formData.password)) {
-            newErrors.password = 'Password must be at least 8 characters with 1 uppercase letter and 1 symbol';
-        }
-
-        // Validate confirm password
-        if (!validateConfirmPassword(formData.password, formData.confirmPassword)) {
-            newErrors.confirmPassword = 'Passwords do not match';
-        }
-
-        // Validate date of birth
-        if (!validateDateOfBirth(formData.dateOfBirth)) {
-            newErrors.dateOfBirth = 'You must be at least 17 years old to sign up';
-        }
-
-        setErrors(newErrors);
-
-        // If no errors, proceed with signup
-        if (!newErrors.fullName && !newErrors.email && !newErrors.password &&
-            !newErrors.confirmPassword && !newErrors.dateOfBirth) {
+        if (validation.isValid) {
             console.log('Signup attempt with:', formData);
             console.log('User age:', calculateAge(formData.dateOfBirth));
 
-            {/* Add Signup Logic Here */}
-            setIsLoading(true);
+            // Add Signup Logic Here
+            register();
         }
     };
 
-    useEffect(() => {
-        const isValid =
-            validateFullName(formData.fullName) &&
-            validateEmail(formData.email) &&
-            validatePassword(formData.password) &&
-            validateConfirmPassword(formData.password, formData.confirmPassword) &&
-            validateDateOfBirth(formData.dateOfBirth);
+    const handleGoogleSignUp = async () => {
+        try {
+            setIsLoading(true);
+            setAuthError('');
 
-        setIsFormValid(isValid);
-    }, [formData]);
+            const provider = new GoogleAuthProvider();
+
+            // Add scopes for better user data access
+            provider.addScope('profile');
+            provider.addScope('email');
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+
+            const result = await signInWithPopup(auth, provider);
+
+            console.log("Google sign-up successful:", result.user);
+
+            // Redirect user to home page after successful registration
+            navigate('/');
+        } catch (error) {
+            console.error("Error during Google sign-up:", error);
+
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        // User closed the popup, no need to show error
+                        console.log("Popup was closed by the user");
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        // Another popup is already open
+                        console.log("Popup request was cancelled");
+                        break;
+                    case 'auth/popup-blocked':
+                        setAuthError('Sign-up popup was blocked by your browser. Please enable popups for this site.');
+                        break;
+                    case 'auth/account-exists-with-different-credential':
+                        setAuthError('An account already exists with the same email. Try signing in instead.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    default:
+                        setAuthError(`Failed to sign up with Google: ${error.message}`);
+                        break;
+                }
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const register = async () => {
+        // Attempts to create user account with email and password
+        try {
+            // Sets state to loading to prevent multiple submissions
+            setIsLoading(true);
+            setAuthError('');
+
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                formData.email,
+                formData.password
+            );
+
+            if (userCredential.user) {
+                await updateProfile(userCredential.user, {
+                    displayName: formData.fullName
+                });
+
+                console.log('User registered:', userCredential.user);
+
+                // Redirect user to home page after successful registration
+                navigate('/');
+            }
+        } catch (error) {
+            console.error('Error registering user:', error);
+
+            // Display specific error message to user
+            if (error instanceof FirebaseError) {
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        setAuthError('This email is already registered. Please sign in instead.');
+                        break;
+                    case 'auth/weak-password':
+                        setAuthError('Please use a stronger password.');
+                        break;
+                    case 'auth/network-request-failed':
+                        setAuthError('Network error. Please check your internet connection.');
+                        break;
+                    default:
+                        setAuthError('Failed to create account. Please try again.');
+                }
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -357,6 +352,14 @@ const SignUp: React.FC = () => {
                                 )}
                             </div>
 
+                            {/* Auth Error Message */}
+                            {authError && (
+                                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                    <p className="text-sm text-red-600">{authError}</p>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
