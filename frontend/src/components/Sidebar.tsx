@@ -1,10 +1,22 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Globe, Calendar, User, Settings, HelpCircle, LogIn } from 'lucide-react';
+import { Home, PlusCircle, Globe, Calendar, User, Settings, HelpCircle, LogIn, LogOut } from 'lucide-react';
 import Logo from '../assets/logo.jpg';
+import useAuth from '../hooks/useAuth';
+import { signOut } from 'firebase/auth';
+import { auth } from '../tools/firebase';
 
 const Sidebar: React.FC = () => {
     const location = useLocation();
+    const { currentUser } = useAuth();
     const isActive = (path: string) => location.pathname === path;
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
 
     return (
         <aside className="bg-white border-r border-gray-200 h-screen w-64 fixed left-0 top-0 z-40 flex flex-col">
@@ -37,17 +49,17 @@ const Sidebar: React.FC = () => {
                         <span className="ml-4">Home</span>
                     </Link>
 
-                    {/* Search */}
+                    {/* Create Post */}
                     <Link
-                        to="/search"
+                        to="/create-post"
                         className={`flex items-center py-3 px-4 rounded-md ${
-                            isActive('/search')
+                            isActive('/create-post')
                                 ? 'bg-blue-50 text-blue-600'
                                 : 'text-gray-700 hover:bg-gray-100'
                         }`}
                     >
-                        <Search size={22} strokeWidth={1.75} />
-                        <span className="ml-4">Search</span>
+                        <PlusCircle size={22} strokeWidth={1.75} />
+                        <span className="ml-4">Create Post</span>
                     </Link>
 
                     {/* Explore */}
@@ -76,18 +88,20 @@ const Sidebar: React.FC = () => {
                         <span className="ml-4">Calendar</span>
                     </Link>
 
-                    {/* Profile */}
-                    <Link
-                        to="/profile"
-                        className={`flex items-center py-3 px-4 rounded-md ${
-                            isActive('/profile')
-                                ? 'bg-blue-50 text-blue-600'
-                                : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                    >
-                        <User size={22} strokeWidth={1.75} />
-                        <span className="ml-4">Profile</span>
-                    </Link>
+                    {/* Profile - conditionally rendered based on auth state */}
+                    {currentUser && (
+                        <Link
+                            to="/profile"
+                            className={`flex items-center py-3 px-4 rounded-md ${
+                                isActive('/profile')
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                        >
+                            <User size={22} strokeWidth={1.75} />
+                            <span className="ml-4">Profile</span>
+                        </Link>
+                    )}
                 </div>
             </nav>
 
@@ -111,15 +125,53 @@ const Sidebar: React.FC = () => {
                         <span className="ml-4">Help</span>
                     </Link>
 
-                    {/* Login Link */}
+                    {/* Conditional Login/User Profile Section */}
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                        <Link
-                            to="/login"
-                            className="flex items-center py-3 px-4 rounded-md text-gray-700 hover:bg-gray-100"
-                        >
-                            <LogIn size={22} strokeWidth={1.75} />
-                            <span className="ml-4">Sign in</span>
-                        </Link>
+                        {currentUser ? (
+                            <>
+                                {/* User Profile Info */}
+                                <div className="flex items-center mb-4 p-2">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                                        {currentUser.photoURL ? (
+                                            <img
+                                                src={currentUser.photoURL}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white">
+                                                {currentUser.displayName?.charAt(0) || currentUser.email?.charAt(0) || '?'}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="ml-3 overflow-hidden">
+                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                            {currentUser.displayName || 'Welcome!'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">
+                                            {currentUser.email}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Sign Out Button */}
+                                <button
+                                    onClick={handleSignOut}
+                                    className="w-full flex items-center py-3 px-4 rounded-md text-gray-700 hover:bg-gray-100"
+                                >
+                                    <LogOut size={22} strokeWidth={1.75} />
+                                    <span className="ml-4">Sign out</span>
+                                </button>
+                            </>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="flex items-center py-3 px-4 rounded-md text-gray-700 hover:bg-gray-100"
+                            >
+                                <LogIn size={22} strokeWidth={1.75} />
+                                <span className="ml-4">Sign in</span>
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

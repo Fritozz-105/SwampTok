@@ -5,6 +5,7 @@ require('dotenv').config();
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
+const postRoutes = require('./routes/postRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -22,6 +23,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
