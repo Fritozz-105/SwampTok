@@ -2,41 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Send } from 'lucide-react';
 import { likePost, unlikePost, addComment } from '../tools/api';
 import useAuth from '../hooks/useAuth';
-
-interface User {
-  _id: string;
-  displayName: string;
-  photoURL?: string;
-}
-
-interface Comment {
-    _id: string;
-    userId: User | string;
-    text: string;
-    createdAt: string;
-}
-
-interface CommentWithUser {
-    _id: string;
-    userId: User;
-    text: string;
-    createdAt: string;
-}
-
-interface Post {
-    _id: string;
-    userId: {
-        _id: string;
-        displayName: string;
-        photoURL?: string;
-    };
-    videoUrl: string;
-    caption: string;
-    tags: string[];
-    likes: string[];
-    comments: Comment[];
-    createdAt: string;
-}
+import { Post, CommentWithUser } from '../types';
 
 interface PostCardProps {
     post: Post;

@@ -1,40 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { getPosts } from '../tools/api';
 import PostCard from '../components/PostCard';
-interface User {
-    _id: string;
-    displayName: string;
-    photoURL?: string;
-}
-
-interface Comment {
-    _id: string;
-    userId: User; // Changed from string to User object
-    text: string;
-    createdAt: string;
-}
-
-interface Post {
-    _id: string;
-    userId: {
-        _id: string;
-        displayName: string;
-        photoURL?: string;
-    };
-    videoUrl: string;
-    caption: string;
-    tags: string[];
-    likes: string[];
-    comments: Comment[];
-    createdAt: string;
-}
-
-interface ApiResponse {
-    success: boolean;
-    posts: Post[];
-    hasMore: boolean;
-    message?: string;
-}
+import { Post, ApiResponse } from '../types';
 
 const Home = () => {
     const [posts, setPosts] = useState<Post[]>([]);
@@ -115,26 +82,26 @@ const Home = () => {
             <div className="space-y-8">
                 {posts.map((post, index) => {
                     if (posts.length === index + 1) {
-                    // Add ref to last element for infinite scroll
-                    return (
-                        <div ref={lastPostElementRef} key={post._id}>
-                            <PostCard
-                            post={post}
-                            onPlay={() => {}}
-                            isActive={false}
-                            onPostUpdate={handlePostUpdate}
-                            />
-                        </div>
-                    );
+                        return (
+                            <div ref={lastPostElementRef} key={post._id}>
+                                <PostCard
+                                    post={post}
+                                    onPlay={() => {}}
+                                    isActive={false}
+                                    onPostUpdate={handlePostUpdate}
+                                />
+                            </div>
+                        );
                     } else {
-                    return (
-                        <PostCard
-                            post={post}
-                            onPlay={() => {}}
-                            isActive={false}
-                            onPostUpdate={handlePostUpdate}
-                        />
-                    );
+                        return (
+                            <PostCard
+                                key={post._id}
+                                post={post}
+                                onPlay={() => {}}
+                                isActive={false}
+                                onPostUpdate={handlePostUpdate}
+                            />
+                        );
                     }
                 })}
             </div>
