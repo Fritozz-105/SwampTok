@@ -4,6 +4,7 @@ import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { SignUpSchema, SignUpFormData, validateAuth, calculateAge } from '../pages/Auth';
 import { auth } from '../tools/firebase';
+import { syncUserWithMongoDB } from '../tools/api';
 import BannerImage from '../assets/university-of-florida-entrance.jpg';
 import GoogleIcon from '../assets/google-icon.svg';
 
@@ -79,11 +80,26 @@ const SignUp: React.FC = () => {
             });
 
             const result = await signInWithPopup(auth, provider);
-
             console.log("Google sign-up successful:", result.user);
 
-            // Redirect user to home page after successful registration
-            navigate('/');
+            // Sync user data with MongoDB
+            const syncResult = await syncUserWithMongoDB({
+                firebaseUid: result.user.uid,
+                email: result.user.email,
+                displayName: result.user.displayName,
+                photoURL: result.user.photoURL
+            });
+
+            // Check if synchronization was successful
+            if (!syncResult.success) {
+                console.error('Database sync failed:', syncResult.message);
+                setAuthError(`Account created but profile couldn't be saved: ${syncResult.message}`);
+            } else {
+                console.log('User synchronized with database:', syncResult.user);
+
+                // Redirect user to home page after successful registration
+                navigate('/');
+            }
         } catch (error) {
             console.error("Error during Google sign-up:", error);
 
@@ -136,8 +152,24 @@ const SignUp: React.FC = () => {
 
                 console.log('User registered:', userCredential.user);
 
-                // Redirect user to home page after successful registration
-                navigate('/');
+                // Sync user data with MongoDB including date of birth
+                const syncResult = await syncUserWithMongoDB({
+                    firebaseUid: userCredential.user.uid,
+                    email: userCredential.user.email,
+                    displayName: formData.fullName,
+                    dateOfBirth: formData.dateOfBirth
+                });
+
+                // Check if synchronization was successful
+                if (!syncResult.success) {
+                    console.error('Database sync failed:', syncResult.message);
+                    setAuthError(`Account created but profile couldn't be saved: ${syncResult.message}`);
+                } else {
+                    console.log('User synchronized with database:', syncResult.user);
+
+                    // Redirect user to home page after successful registration
+                    navigate('/');
+                }
             }
         } catch (error) {
             console.error('Error registering user:', error);
