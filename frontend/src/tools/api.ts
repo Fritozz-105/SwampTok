@@ -16,7 +16,6 @@ interface PostData {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const syncUserWithMongoDB = async (userData: UserData) => {
-    
 
     try {
         const response = await fetch(`${API_URL}/api/users/sync`, {
@@ -243,3 +242,4 @@ export const getUserPosts = async (firebaseUid: string) => {
         return { success: false, message: 'Connection failed' };
     }
 };
+
