@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 
@@ -134,20 +133,3 @@ const CalendarPage = () => {
 };
 
 export default CalendarPage;
-=======
-
-
-const Calendar = () => {
-    return (
-        <div className="flex">
-            <div className="ml-64 w-full">
-                <main className="min-h-screen p-6">
-                    <h1 className="text-2xl font-bold">Calendar</h1>
-                </main>
-            </div>
-        </div>
-    );
-};
-
-export default Calendar;
->>>>>>> f514b7243b282b5da7106334f4d4e857852163b8
