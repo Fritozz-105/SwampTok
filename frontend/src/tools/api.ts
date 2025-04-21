@@ -13,8 +13,9 @@ interface PostData {
     tags?: string;
   }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export const syncUserWithMongoDB = async (userData: UserData) => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
     try {
         const response = await fetch(`${API_URL}/api/users/sync`, {
@@ -42,6 +43,37 @@ export const syncUserWithMongoDB = async (userData: UserData) => {
             success: false,
             message: error instanceof Error ? error.message : 'Unknown error',
             error: 'Connection failed'
+        };
+    }
+};
+
+export const getUserData = async (firebaseUid: string) => {
+    try {
+        const response = await fetch(`${API_URL}/api/users/${firebaseUid}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data.message || 'Failed to fetch user data',
+            };
+        }
+
+        return {
+            success: true,
+            user: data.user as UserData,
+        };
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error',
         };
     }
 };
@@ -192,3 +224,22 @@ export const addComment = async (postId: string, firebaseUid: string, text: stri
         };
     }
 };
+
+export const getUserPosts = async (firebaseUid: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/posts/user/${firebaseUid}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            return { success: false, message: data.message || 'Failed to fetch user posts' };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching user posts:', error);
+        return { success: false, message: 'Connection failed' };
+    }
+};
+

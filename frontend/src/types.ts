@@ -4,6 +4,14 @@ export interface User {
     photoURL?: string;
 }
 
+export interface UserData {
+    firebaseUid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL?: string | null;
+    dateOfBirth?: string;
+}
+
 export interface Comment {
     _id: string;
     userId: User | string;

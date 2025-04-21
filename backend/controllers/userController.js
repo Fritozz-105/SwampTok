@@ -1,6 +1,21 @@
 const User = require('../models/User');
 
-// Sync user data after Firebase authentication
+const getUserByFirebaseUid = async (req, res) => {
+    try {
+        const { firebaseUid } = req.params;
+        const user = await User.findOne({ firebaseUid });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        return res.json({ success: true, user });
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
 const syncUser = async (req, res) => {
     try {
         const { firebaseUid, email, displayName, photoURL, dateOfBirth } = req.body;
@@ -9,7 +24,6 @@ const syncUser = async (req, res) => {
             return res.status(400).json({ message: 'Firebase UID and email are required' });
         }
 
-        // Find user by Firebase UID or create a new one
         const updatedUser = await User.findOneAndUpdate(
             { firebaseUid },
             {
@@ -23,18 +37,18 @@ const syncUser = async (req, res) => {
         );
 
         res.status(200).json({
-                success: true,
-                user: {
-                    id: updatedUser._id,
-                    firebaseUid: updatedUser.firebaseUid,
-                    email: updatedUser.email,
-                    displayName: updatedUser.displayName,
-                    lastLogin: updatedUser.lastLogin
+            success: true,
+            user: {
+                id: updatedUser._id,
+                firebaseUid: updatedUser.firebaseUid,
+                email: updatedUser.email,
+                displayName: updatedUser.displayName,
+                lastLogin: updatedUser.lastLogin
             }
         });
-        } catch (error) {
-            console.error('Error syncing user:', error);
-            res.status(500).json({
+    } catch (error) {
+        console.error('Error syncing user:', error);
+        res.status(500).json({
             success: false,
             message: 'Server error while syncing user data',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -43,5 +57,6 @@ const syncUser = async (req, res) => {
 };
 
 module.exports = {
-    syncUser
+    syncUser,
+    getUserByFirebaseUid
 };

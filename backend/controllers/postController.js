@@ -349,6 +349,19 @@ const deleteComment = async (req, res) => {
     }
 };
 
+// Get all posts for a user
+const getPostsByUser = async (req, res) => {
+    try {
+        const { firebaseUid } = req.params;
+        const posts = await Post.find({ firebaseUid }).sort({ createdAt: -1 });
+
+        return res.json({ success: true, posts });
+    } catch (error) {
+        console.error('Error fetching user posts:', error);
+        return res.status(500).json({ success: false, message: 'Server error fetching user posts' });
+    }
+};
+
 module.exports = {
     createPost,
     getAllPosts,
@@ -358,5 +371,6 @@ module.exports = {
     likePost,
     unlikePost,
     addComment,
-    deleteComment
+    deleteComment,
+    getPostsByUser
 };
