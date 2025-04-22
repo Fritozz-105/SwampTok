@@ -1,3 +1,4 @@
+// api.ts
 interface UserData {
     firebaseUid: string;
     email: string | null;
@@ -11,7 +12,7 @@ interface PostData {
     videoUrl: string;
     caption?: string;
     tags?: string;
-  }
+}
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -224,6 +225,130 @@ export const addComment = async (postId: string, firebaseUid: string, text: stri
         };
     }
 };
+
+export const saveEvent = async ({
+    firebaseUid,
+    date,
+    event
+  }: {
+    firebaseUid: string;
+    date:string;
+    event:string;
+  }) => {
+    const API_URL=import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  
+    try {
+      const response=await fetch(`${API_URL}/api/calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ firebaseUid, date, eventName: event }),
+      });
+  
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Non-OK response:', response.status, text);
+        return {
+          success: false,
+          message: `Failed to save event: ${response.statusText}`,
+        };
+      }
+  
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return { success: false, message: 'Invalid response format from server' };
+      }
+  
+      const data = await response.json();
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error saving event:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+  export const getCalendarEvents = async (firebaseUid: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  
+    try {
+      const response = await fetch(`${API_URL}/api/calendar/${firebaseUid}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Non-OK response:', response.status, text);
+        return {
+          success: false,
+          message: `Failed to fetch events: ${response.statusText}`,
+        };
+      }
+  
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return { success: false, message: 'Invalid response format from server' };
+      }
+  
+      const data = await response.json();
+      return { success: true, events: data.events || [] };
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+export const deleteEvent = async (firebaseUid: string, date: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  
+    try {
+      const response = await fetch(`${API_URL}/api/calendar`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ firebaseUid, date }),
+      });
+  
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Non-OK response:', response.status, text);
+        return {
+          success: false,
+          message: `Failed to delete event: ${response.statusText}`,
+        };
+      }
+  
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return { success: false, message: 'Invalid response format from server' };
+      }
+  
+      const data = await response.json();
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message :'Unknown error',
+      };
+    }
+  };
 
 export const getUserPosts = async (firebaseUid: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';

@@ -1,134 +1,155 @@
-import { useState } from "react";
-import Sidebar from "../components/Sidebar";
+import React, { useEffect, useState } from 'react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import Layout from '../components/Layout';
+import { saveEvent, getCalendarEvents, deleteEvent } from '../tools/api';
+import useAuth from '../hooks/useAuth';
 
-const CalendarPage = () => {
-  const [currentDate, setCurrentDate] = useState(new Date()); // Current date (for navigation)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null); // The selected date
+const CalendarPage: React.FC = () => {
+  const { currentUser } = useAuth();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [events, setEvents] = useState<{ [key: string]: string }>({});
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Function to get the first day of the month
-  const getFirstDayOfMonth = (date: Date) => {
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-    return firstDay.getDay(); // Day of the week (0 = Sunday, 6 = Saturday)
+  useEffect(()=>{
+    const fetchEvents = async() =>{
+      if (currentUser) {
+        console.log('Fetching events for user:', currentUser.uid);
+        setIsLoading(true);
+        const response = await getCalendarEvents(currentUser.uid);
+        console.log('Fetch response:', response);
+        setIsLoading(false);
+        if (response.success) {
+          const eventsMap = response.events.reduce((acc: { [key: string]: string }, event: { date: string; eventName: string }) => {
+            acc[event.date] = event.eventName;
+            return acc;
+          }, {});
+          console.log('Events map:', eventsMap);
+          setEvents(eventsMap);
+        } else {
+          setError(response.message || 'Failed to fetch events');
+        }
+      } else {
+        console.log('No currentUser, clearing events');
+        setEvents({});
+      }
+    };
+
+    fetchEvents();
+  },[currentUser]);
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    setInputValue(events[date.toDateString()] || '');
+    setSuccessMessage(null);
+    setError(null);
   };
-
-  // Function to get the number of days in the current month
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  // Function to go to the previous month
-  const goToPreviousMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)
-    );
-  };
-
-  // Function to go to the next month
-  const goToNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)
-    );
-  };
-
-  // Generate an array of the days in the current month
-  const generateCalendarDays = () => {
-    const daysInMonth = getDaysInMonth(currentDate);
-    const firstDay = getFirstDayOfMonth(currentDate);
-
-    // Create an array of empty cells to account for the first day of the month
-    const daysArray = [];
-    for (let i = 0; i < firstDay; i++) {
-      daysArray.push(null); // Empty cell
+  const handleEventSave = async () => {
+    if (selectedDate && currentUser) {
+      setIsLoading(true);
+      const response = await saveEvent({
+        firebaseUid: currentUser.uid,
+        date: selectedDate.toDateString(),
+        event: inputValue,
+      });
+      setIsLoading(false);
+      if (response.success) {
+        setEvents((prev) => ({
+          ...prev,
+          [selectedDate.toDateString()]: inputValue,
+        }));
+        setSuccessMessage('Event saved successfully.');
+        setError(null);
+      } else {
+        setError(response.message || 'Failed to save event.');
+        setSuccessMessage(null);
+      }
     }
+  };
+  const handleEventDelete = async (date: string) => {
+    if (currentUser) {
+      setIsLoading(true);
+      const response = await deleteEvent(currentUser.uid, date);
+      setIsLoading(false);
+      if (response.success) {
+        setEvents((prev) => {
+          const newEvents = { ...prev };
+          delete newEvents[date];
+          return newEvents;
+        });
+        setSuccessMessage('Event deleted successfully.');
+        setError(null);
+      } else {
+        setError(response.message|| 'Failed to delete event.');
+        setSuccessMessage(null);
 
-    // Add the actual days of the month
-    for (let i = 1; i <= daysInMonth; i++) {
-      daysArray.push(i);
+
+      }
     }
-
-    return daysArray;
   };
-
-  // Function to handle day click
-  const handleDayClick = (day: number) => {
-    const newSelectedDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    setSelectedDate(newSelectedDate);
-  };
-
-  const calendarDays = generateCalendarDays();
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="ml-64 w-full">
-        <main className="min-h-screen p-6">
-          <h1 className="text-2xl font-bold">Calendar</h1>
 
-          <div className="mt-6">
-            {/* Calendar Controls */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={goToPreviousMonth}
-                className="px-4 py-2 bg-gray-300 rounded-md"
-              >
-                Previous
-              </button>
-              <h2 className="text-xl font-semibold">
-                {currentDate.toLocaleString("default", { month: "long" })}{" "}
-                {currentDate.getFullYear()}
-              </h2>
-              <button
-                onClick={goToNextMonth}
-                className="px-4 py-2 bg-gray-300 rounded-md"
-              >
-                Next
-              </button>
-            </div>
+    <Layout>
+      <div className="max-w-3xl mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Calendar</h1>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-4">
-              {/* Weekday Headers */}
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                (day, index) => (
-                  <div key={index} className="text-center font-semibold">
-                    {day}
-                  </div>
-                )
-              )}
+        {isLoading && <p>Loading...</p>}
+        <Calendar onClickDay={handleDateChange} value={selectedDate} className="mb-6" />
 
-              {/* Days of the Month */}
-              {calendarDays.map((day, index) => (
-                <div
-                  key={index}
-                  className={`text-center p-2 rounded-md cursor-pointer ${
-                    day
-                      ? selectedDate?.getDate() === day
-                        ? "bg-blue-500 text-white"
-                        : "hover:bg-gray-200"
-                      : "bg-transparent"
-                  }`}
-                  onClick={() => day && handleDayClick(day)}
-                >
-                  {day || ""}
-                </div>
-              ))}
-            </div>
-
-            {/* Display Selected Date */}
-            {selectedDate && (
-              <div className="mt-4">
-                <h3 className="text-lg">Selected Date:</h3>
-                <p>{selectedDate.toDateString()}</p>
-              </div>
-            )}
+        {selectedDate && (
+          <div className="bg-white shadow-md rounded p-4 mb-6">
+            <h2 className="text-xl font-semibold mb-2">
+              Add Event for {selectedDate.toDateString()}
+            </h2>
+            <input
+              type="text"
+              placeholder="Enter event name..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded mb-2"
+              disabled={isLoading}
+            />
+            <button
+              onClick={handleEventSave}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Saving...' :'Save Event'}
+            </button>
+            {successMessage && <p className="text-green-600 mt-2">{successMessage}</p>}
+            {error && <p className="text-red-600 mt-2">{error}</p>}
           </div>
-        </main>
+        )}
+
+        {Object.keys(events).length > 0 ? (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Saved Events</h3>
+            <ul className="list-disc list-inside">
+              {Object.entries(events).map(([date, event]) => (
+                <li key={date} className="flex items-center justify-between">
+                  <span>
+                    <strong>{date}:</strong> {event}
+                  </span>
+                  <button
+                    onClick={() => handleEventDelete(date)}
+                    className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                    disabled={isLoading}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p>No saved events.</p>
+        )}
       </div>
-    </div>
+    </Layout>
   );
 };
 
