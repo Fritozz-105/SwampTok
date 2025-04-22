@@ -7,6 +7,7 @@ Full-Stack Web Application built with Node.js, React, Express, Vite, MongoDB, Fi
 
 ## Prerequisites
 To clone the repo to one's local IDE, node.js must be downloaded
+---
 Refer to https://nodejs.org/en/ to install Node.js
 
 ### Installation
