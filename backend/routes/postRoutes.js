@@ -15,4 +15,6 @@ router.post('/:id/unlike', postController.unlikePost);
 router.post('/:id/comment', postController.addComment);
 router.delete('/:id/comment/:commentId', postController.deleteComment);
 
+router.get('/user/:firebaseUid', postController.getPostsByUser);
+
 module.exports = router;
