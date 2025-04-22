@@ -14,6 +14,14 @@ const userSchema = new mongoose.Schema({
   displayName: String,
   photoURL: String,
   dateOfBirth: Date,
+  bio: {
+    type: String,
+    default: ''
+  },
+  interests: {
+    type: [String],
+    default: []
+  },
   createdAt: {
     type: Date,
     default: Date.now

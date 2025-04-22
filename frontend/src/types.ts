@@ -1,5 +1,6 @@
 export interface User {
     _id: string;
+    firebaseUid?: string;
     displayName: string;
     photoURL?: string;
 }
@@ -10,8 +11,10 @@ export interface UserData {
     displayName: string | null;
     photoURL?: string | null;
     dateOfBirth?: string;
-    followers?: string[];    // ✅ Add this
+    followers?: string[];
     following?: string[]; 
+    bio?: string;
+    interests?: string[];
 }
 
 export interface Comment {
@@ -32,6 +35,7 @@ export interface Post {
     _id: string;
     userId: {
         _id: string;
+        firebaseUid?: string;
         displayName: string;
         photoURL?: string;
     };

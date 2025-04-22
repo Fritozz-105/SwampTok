@@ -11,6 +11,7 @@ import LandingPage from './pages/LandingPage';
 import useAuth from './hooks/useAuth';
 import Layout from './components/Layout';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
 import CreatePost from './pages/CreatePost';
 import Explore from './pages/Explore';
@@ -55,11 +56,17 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Own Profile */}
           <Route path="/profile" element={
             <ProtectedRoute>
-              <Layout>
-                <Profile />
-              </Layout>
+              <Profile />
+            </ProtectedRoute>
+          } />
+
+          {/* User Profile - view other users' profiles */}
+          <Route path="/user/:userId" element={
+            <ProtectedRoute>
+              <UserProfile />
             </ProtectedRoute>
           } />
 

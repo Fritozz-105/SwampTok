@@ -5,8 +5,10 @@ interface UserData {
     displayName: string | null;
     photoURL?: string | null;
     dateOfBirth?: string;
-    followers?: string[];    // ✅ Add this
+    followers?: string[];
     following?: string[]; 
+    bio?: string;
+    interests?: string[];
 }
 
 interface PostData {
@@ -238,7 +240,7 @@ export const saveEvent = async ({
     event:string;
   }) => {
     const API_URL=import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  
+
     try {
       const response=await fetch(`${API_URL}/api/calendar`, {
         method: 'POST',
@@ -247,7 +249,7 @@ export const saveEvent = async ({
         },
         body: JSON.stringify({ firebaseUid, date, eventName: event }),
       });
-  
+
       if (!response.ok) {
         const text = await response.text();
         console.error('Non-OK response:', response.status, text);
@@ -256,14 +258,14 @@ export const saveEvent = async ({
           message: `Failed to save event: ${response.statusText}`,
         };
       }
-  
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
         return { success: false, message: 'Invalid response format from server' };
       }
-  
+
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
@@ -277,7 +279,7 @@ export const saveEvent = async ({
 
   export const getCalendarEvents = async (firebaseUid: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  
+
     try {
       const response = await fetch(`${API_URL}/api/calendar/${firebaseUid}`, {
         method: 'GET',
@@ -285,7 +287,7 @@ export const saveEvent = async ({
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (!response.ok) {
         const text = await response.text();
         console.error('Non-OK response:', response.status, text);
@@ -294,14 +296,14 @@ export const saveEvent = async ({
           message: `Failed to fetch events: ${response.statusText}`,
         };
       }
-  
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
         return { success: false, message: 'Invalid response format from server' };
       }
-  
+
       const data = await response.json();
       return { success: true, events: data.events || [] };
     } catch (error) {
@@ -315,7 +317,7 @@ export const saveEvent = async ({
 
 export const deleteEvent = async (firebaseUid: string, date: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  
+
     try {
       const response = await fetch(`${API_URL}/api/calendar`, {
         method: 'DELETE',
@@ -324,7 +326,7 @@ export const deleteEvent = async (firebaseUid: string, date: string) => {
         },
         body: JSON.stringify({ firebaseUid, date }),
       });
-  
+
       if (!response.ok) {
         const text = await response.text();
         console.error('Non-OK response:', response.status, text);
@@ -333,14 +335,14 @@ export const deleteEvent = async (firebaseUid: string, date: string) => {
           message: `Failed to delete event: ${response.statusText}`,
         };
       }
-  
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
         return { success: false, message: 'Invalid response format from server' };
       }
-  
+
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
@@ -370,3 +372,36 @@ export const getUserPosts = async (firebaseUid: string) => {
     }
 };
 
+export const updateUserProfile = async (firebaseUid: string, profileData: Partial<UserData>) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/users/${firebaseUid}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(profileData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data.message || 'Failed to update user profile',
+            };
+        }
+
+        return {
+            success: true,
+            user: data.user as UserData,
+        };
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error',
+        };
+    }
+};

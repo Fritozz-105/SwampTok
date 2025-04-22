@@ -60,11 +60,11 @@ const getAllPosts = async (req, res) => {
             .limit(limit)
             .populate({
                 path: 'userId',
-                select: 'displayName photoURL'
+                select: 'displayName photoURL firebaseUid'
             })
             .populate({
-            path: 'comments.userId',
-            select: 'displayName photoURL'
+                path: 'comments.userId',
+                select: 'displayName photoURL firebaseUid'
             });
 
         // Return with pagination metadata
@@ -91,7 +91,8 @@ const getAllPosts = async (req, res) => {
 const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
-            .populate('userId', 'displayName photoURL');
+            .populate('userId', 'displayName photoURL firebaseUid')
+            .populate('comments.userId', 'displayName photoURL firebaseUid');
 
         if (!post) {
             return res.status(404).json({
@@ -353,7 +354,18 @@ const deleteComment = async (req, res) => {
 const getPostsByUser = async (req, res) => {
     try {
         const { firebaseUid } = req.params;
-        const posts = await Post.find({ firebaseUid }).sort({ createdAt: -1 });
+
+        // Find posts with the given firebaseUid and populate user details
+        const posts = await Post.find({ firebaseUid })
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'userId',
+                select: 'displayName photoURL firebaseUid'
+            })
+            .populate({
+                path: 'comments.userId',
+                select: 'displayName photoURL firebaseUid'
+            });
 
         return res.json({ success: true, posts });
     } catch (error) {
