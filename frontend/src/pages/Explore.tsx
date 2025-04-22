@@ -38,7 +38,7 @@ const Explore = () => {
     [isLoading, hasMore]
   );
 
-  const fetchExplorePosts = async (pageNum: number) => {
+  const fetchExplorePosts = useCallback(async (pageNum: number) => {
     if (!currentUser) {
       setError("You must be logged in to view posts");
       setIsLoading(false);
@@ -65,7 +65,7 @@ const Explore = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const handlePostUpdate = (updatedPost: Post) => {
     setPosts((prevPosts) =>
@@ -80,14 +80,14 @@ const Explore = () => {
     if (currentUser) {
       fetchExplorePosts(1);
     }
-  }, [currentUser]);
+  }, [currentUser, fetchExplorePosts]);
 
   // Load more when page changes
   useEffect(() => {
     if (page > 1 && currentUser) {
       fetchExplorePosts(page);
     }
-  }, [page, currentUser]);
+  }, [page, currentUser, fetchExplorePosts]);
 
   return (
     <Layout>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { ChevronDown, ChevronUp, MessageCircle, Mail, Search, BookOpen, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
 
 // FAQ data structure
 interface FAQItem {
@@ -183,9 +182,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ title, items }) => {
     );
 };
 
-// Help Center component
 const Help = () => {
-    const { currentUser } = useAuth();
     const [searchQuery, setSearchQuery] = useState<string>('');
 
     return (

@@ -37,7 +37,7 @@ const Home = () => {
     [isLoading, hasMore]
   );
 
-  const fetchPosts = async (pageNum: number) => {
+  const fetchPosts = useCallback(async (pageNum: number) => {
     if (!currentUser) {
       setError("You must be logged in to view posts");
       setIsLoading(false);
@@ -64,7 +64,7 @@ const Home = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const handlePostUpdate = (updatedPost: Post) => {
     setPosts((prevPosts) =>
@@ -79,14 +79,14 @@ const Home = () => {
     if (currentUser) {
       fetchPosts(1);
     }
-  }, [currentUser]);
+  }, [currentUser, fetchPosts]);
 
   // Load more when page changes
   useEffect(() => {
     if (page > 1 && currentUser) {
       fetchPosts(page);
     }
-  }, [page, currentUser]);
+  }, [page, currentUser, fetchPosts]);
 
   return (
     <div className="max-w-3xl mx-auto py-8">
