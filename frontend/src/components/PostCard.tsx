@@ -105,9 +105,10 @@ const PostCard: React.FC<PostCardProps> = ({
       return;
     }
 
-    // Create an optimistic comment for immediate display
+    // Create an optimistic comment for immediate display with a truly unique ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const optimisticComment: CommentWithUser = {
-      _id: `temp-${Date.now()}`,
+      _id: tempId,
       text: newComment,
       createdAt: new Date().toISOString(),
       userId: {

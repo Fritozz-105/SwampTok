@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/postController');
 
-// Public routes
+// Public routes - specific routes first
+router.get('/following/:firebaseUid', postController.getFollowingPosts);
+router.get('/explore/:firebaseUid', postController.getExplorePosts);
+router.get('/user/:firebaseUid', postController.getPostsByUser);
+
+// Generic routes
 router.get('/', postController.getAllPosts);
 router.get('/:id', postController.getPostById);
 
@@ -14,7 +19,5 @@ router.post('/:id/like', postController.likePost);
 router.post('/:id/unlike', postController.unlikePost);
 router.post('/:id/comment', postController.addComment);
 router.delete('/:id/comment/:commentId', postController.deleteComment);
-
-router.get('/user/:firebaseUid', postController.getPostsByUser);
 
 module.exports = router;

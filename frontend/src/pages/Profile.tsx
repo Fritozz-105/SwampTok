@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { getUserData, getUserPosts } from "../tools/api";
 import { UserData, Post } from "../types";
 import Layout from "../components/Layout";
+import { Users } from "lucide-react";
 
 const Profile = () => {
   const [user, setUser] = useState<UserData | null>(null);
@@ -96,6 +97,25 @@ const Profile = () => {
               </div>
             )}
 
+            {/* Followers & Following Stats */}
+            <div className="flex items-center space-x-8 text-center mt-3">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
+                  <Users size={20} className="mr-2" />
+                  <span className="font-bold">{user.followers?.length || 0}</span>
+                </div>
+                <div className="text-gray-600 text-sm">Followers</div>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="flex items-center text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
+                  <Users size={20} className="mr-2" />
+                  <span className="font-bold">{user.following?.length || 0}</span>
+                </div>
+                <div className="text-gray-600 text-sm">Following</div>
+              </div>
+            </div>
+
             <div className="text-center">
               <p className="text-gray-500 text-sm">
                 {user.dateOfBirth
@@ -111,10 +131,6 @@ const Profile = () => {
             <p className="text-gray-700">
               {user.bio ? user.bio : "No bio available."}
             </p>
-            <p className="text-gray-600 text-sm">
-            {user.followers?.length || 0} Followers · {user.following?.length || 0} Following
-            </p>
-
           </div>
 
           {/* Interests Section */}

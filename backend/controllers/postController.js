@@ -374,6 +374,131 @@ const getPostsByUser = async (req, res) => {
     }
 };
 
+// Get posts from users that current user follows
+const getFollowingPosts = async (req, res) => {
+    try {
+        const { firebaseUid } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Find the current user
+        const currentUser = await User.findOne({ firebaseUid });
+
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Get the list of users the current user is following
+        const followingList = currentUser.following || [];
+
+        // Find all users with these firebase UIDs
+        const followedUsers = await User.find({ firebaseUid: { $in: followingList } });
+        const followedUserIds = followedUsers.map(user => user._id);
+
+        // Count total posts from followed users
+        const totalPosts = await Post.countDocuments({ userId: { $in: followedUserIds } });
+
+        // Fetch posts from users the current user is following
+        const posts = await Post.find({ userId: { $in: followedUserIds } })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate({
+                path: 'userId',
+                select: 'displayName photoURL firebaseUid'
+            })
+            .populate({
+                path: 'comments.userId',
+                select: 'displayName photoURL firebaseUid'
+            });
+
+        // Return with pagination metadata
+        res.status(200).json({
+            success: true,
+            count: posts.length,
+            totalPages: Math.ceil(totalPosts / limit),
+            currentPage: page,
+            hasMore: page < Math.ceil(totalPosts / limit),
+            posts
+        });
+    } catch (error) {
+        console.error('Error fetching following posts:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching following posts',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Get posts from users that current user doesn't follow (explore)
+const getExplorePosts = async (req, res) => {
+    try {
+        const { firebaseUid } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Find the current user
+        const currentUser = await User.findOne({ firebaseUid });
+
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Get the list of users the current user is following (plus their own ID)
+        const followingList = currentUser.following || [];
+
+        // Find all users with these firebase UIDs
+        const followedUsers = await User.find({ firebaseUid: { $in: followingList } });
+        const followedUserIds = followedUsers.map(user => user._id);
+
+        // Add the current user's ID to the list of excluded user IDs
+        followedUserIds.push(currentUser._id);
+
+        // Count total posts from users not followed
+        const totalPosts = await Post.countDocuments({ userId: { $nin: followedUserIds } });
+
+        // Fetch posts from users the current user doesn't follow
+        const posts = await Post.find({ userId: { $nin: followedUserIds } })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate({
+                path: 'userId',
+                select: 'displayName photoURL firebaseUid'
+            })
+            .populate({
+                path: 'comments.userId',
+                select: 'displayName photoURL firebaseUid'
+            });
+
+        // Return with pagination metadata
+        res.status(200).json({
+            success: true,
+            count: posts.length,
+            totalPages: Math.ceil(totalPosts / limit),
+            currentPage: page,
+            hasMore: page < Math.ceil(totalPosts / limit),
+            posts
+        });
+    } catch (error) {
+        console.error('Error fetching explore posts:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching explore posts',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     createPost,
     getAllPosts,
@@ -384,5 +509,7 @@ module.exports = {
     unlikePost,
     addComment,
     deleteComment,
-    getPostsByUser
+    getPostsByUser,
+    getFollowingPosts,
+    getExplorePosts
 };

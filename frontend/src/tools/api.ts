@@ -6,7 +6,7 @@ interface UserData {
     photoURL?: string | null;
     dateOfBirth?: string;
     followers?: string[];
-    following?: string[]; 
+    following?: string[];
     bio?: string;
     interests?: string[];
 }
@@ -130,6 +130,42 @@ export const getPosts = async (page = 1, limit = 10) => {
         return data;
     } catch (error) {
         console.error('Error fetching posts:', error);
+        return { success: false, message: 'Connection failed' };
+    }
+};
+
+export const getFollowingPosts = async (firebaseUid: string, page = 1, limit = 10) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/posts/following/${firebaseUid}?page=${page}&limit=${limit}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            return { success: false, message: data.message || 'Failed to fetch posts from followed users' };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching following posts:', error);
+        return { success: false, message: 'Connection failed' };
+    }
+};
+
+export const getExplorePosts = async (firebaseUid: string, page = 1, limit = 10) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/posts/explore/${firebaseUid}?page=${page}&limit=${limit}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            return { success: false, message: data.message || 'Failed to fetch explore posts' };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching explore posts:', error);
         return { success: false, message: 'Connection failed' };
     }
 };
@@ -399,6 +435,74 @@ export const updateUserProfile = async (firebaseUid: string, profileData: Partia
         };
     } catch (error) {
         console.error('Error updating user profile:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error',
+        };
+    }
+};
+
+export const followUser = async (currentUserFirebaseUid: string, targetUserFirebaseUid: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/follow/${targetUserFirebaseUid}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ currentUserId: currentUserFirebaseUid }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data.message || 'Failed to follow user',
+            };
+        }
+
+        return {
+            success: true,
+            message: data.message || 'Successfully followed user',
+        };
+    } catch (error) {
+        console.error('Error following user:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error',
+        };
+    }
+};
+
+export const unfollowUser = async (currentUserFirebaseUid: string, targetUserFirebaseUid: string) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+    try {
+        const response = await fetch(`${API_URL}/api/follow/unfollow/${targetUserFirebaseUid}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ currentUserId: currentUserFirebaseUid }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data.message || 'Failed to unfollow user',
+            };
+        }
+
+        return {
+            success: true,
+            message: data.message || 'Successfully unfollowed user',
+        };
+    } catch (error) {
+        console.error('Error unfollowing user:', error);
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Unknown error',
