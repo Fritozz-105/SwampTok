@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { getPosts } from "../tools/api";
+import { getFollowingPosts } from "../tools/api";
 import PostCard from "../components/PostCard";
 import { Post, ApiResponse } from "../types";
+import useAuth from "../hooks/useAuth";
 
 const Home = () => {
+  const { currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +38,16 @@ const Home = () => {
   );
 
   const fetchPosts = async (pageNum: number) => {
+    if (!currentUser) {
+      setError("You must be logged in to view posts");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
-      const response = await getPosts(pageNum);
+      const response = await getFollowingPosts(currentUser.uid, pageNum);
       const data = response as ApiResponse;
 
       if (!data.success) {
@@ -68,15 +76,17 @@ const Home = () => {
 
   // Initial load
   useEffect(() => {
-    fetchPosts(1);
-  }, []);
+    if (currentUser) {
+      fetchPosts(1);
+    }
+  }, [currentUser]);
 
   // Load more when page changes
   useEffect(() => {
-    if (page > 1) {
+    if (page > 1 && currentUser) {
       fetchPosts(page);
     }
-  }, [page]);
+  }, [page, currentUser]);
 
   return (
     <div className="max-w-3xl mx-auto py-8">
@@ -129,8 +139,8 @@ const Home = () => {
 
       {!isLoading && posts.length === 0 && !error && (
         <div className="text-center py-12">
-          <p className="text-lg text-gray-500">No posts available yet.</p>
-          <p className="text-gray-400 mt-2">Be the first to post a video!</p>
+          <p className="text-lg text-gray-500">No posts from people you follow yet.</p>
+          <p className="text-gray-400 mt-2">Follow more people or check out the Explore page!</p>
         </div>
       )}
     </div>

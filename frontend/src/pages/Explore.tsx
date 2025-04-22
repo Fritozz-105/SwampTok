@@ -1,15 +1,155 @@
-import Sidebar from "../components/Sidebar";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { getExplorePosts } from "../tools/api";
+import PostCard from "../components/PostCard";
+import { Post, ApiResponse } from "../types";
+import Layout from "../components/Layout";
+import useAuth from "../hooks/useAuth";
 
 const Explore = () => {
+  const { currentUser } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  const lastPostElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isLoading) {
+        return;
+      }
+
+      if (observer.current) {
+        observer.current.disconnect();
+      }
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+
+      if (node) {
+        observer.current.observe(node);
+      }
+    },
+    [isLoading, hasMore]
+  );
+
+  const fetchExplorePosts = async (pageNum: number) => {
+    if (!currentUser) {
+      setError("You must be logged in to view posts");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await getExplorePosts(currentUser.uid, pageNum);
+      const data = response as ApiResponse;
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch posts");
+      }
+
+      setPosts((prevPosts) =>
+        pageNum === 1 ? data.posts : [...prevPosts, ...data.posts]
+      );
+      setHasMore(data.hasMore);
+    } catch (err) {
+      console.error("Error fetching explore posts:", err);
+      setError(err instanceof Error ? err.message : "Failed to load posts");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post._id === updatedPost._id ? updatedPost : post
+      )
+    );
+  };
+
+  // Initial load
+  useEffect(() => {
+    if (currentUser) {
+      fetchExplorePosts(1);
+    }
+  }, [currentUser]);
+
+  // Load more when page changes
+  useEffect(() => {
+    if (page > 1 && currentUser) {
+      fetchExplorePosts(page);
+    }
+  }, [page, currentUser]);
+
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="ml-64 w-full">
-        <main className="min-h-screen p-6">
-          <h1 className="text-2xl font-bold">Home Page Content</h1>
-        </main>
+    <Layout>
+      <div className="max-w-3xl mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Explore New Content</h1>
+        <p className="text-gray-600 mb-6">
+          Discover posts from new people you aren't following yet.
+        </p>
+
+        <div className="space-y-8">
+          {posts.map((post, index) => {
+            if (posts.length === index + 1) {
+              return (
+                <div ref={lastPostElementRef} key={post._id}>
+                  <PostCard
+                    post={post}
+                    onPlay={() => {}}
+                    isActive={false}
+                    onPostUpdate={handlePostUpdate}
+                  />
+                </div>
+              );
+            } else {
+              return (
+                <PostCard
+                  key={post._id}
+                  post={post}
+                  onPlay={() => {}}
+                  isActive={false}
+                  onPostUpdate={handlePostUpdate}
+                />
+              );
+            }
+          })}
+        </div>
+
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-md my-4">
+            {error}
+          </div>
+        )}
+
+        {!hasMore && posts.length > 0 && (
+          <p className="text-center text-gray-500 py-6">
+            You've reached the end!
+          </p>
+        )}
+
+        {!isLoading && posts.length === 0 && !error && (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-500">No new posts to explore.</p>
+            <p className="text-gray-400 mt-2">Check back later for new content!</p>
+          </div>
+        )}
       </div>
-    </div>
+    </Layout>
   );
 };
 

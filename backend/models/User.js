@@ -31,13 +31,11 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   },
   followers: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'User',
+    type: [String],  // Using String type for Firebase UIDs
     default: []
   },
   following: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'User',
+    type: [String],  // Using String type for Firebase UIDs
     default: []
   }
 });
