@@ -41,5 +41,19 @@ export const LoginSchema = z.object({
     password: z.string().min(1, 'Password is required')
 });
 
+// Define the Password Change schema
+export const PasswordChangeSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+        .regex(/[!@#$%^&*]/, 'Password must contain at least 1 symbol'),
+    confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword']
+});
+
 export type SignUpFormData = z.infer<typeof SignUpSchema>;
 export type LoginFormData = z.infer<typeof LoginSchema>;
+export type PasswordChangeFormData = z.infer<typeof PasswordChangeSchema>;

@@ -3,6 +3,7 @@ import { Heart, MessageCircle, Send } from "lucide-react";
 import { likePost, unlikePost, addComment } from "../tools/api";
 import useAuth from "../hooks/useAuth";
 import { Post, CommentWithUser } from "../types";
+import { Link } from "react-router-dom";
 
 interface PostCardProps {
   post: Post;
@@ -183,31 +184,66 @@ const PostCard: React.FC<PostCardProps> = ({
     setShowComments((prev) => !prev);
   };
 
+  // Helper to get the user profile URL from a user ID
+  const getUserProfileUrl = (userId: Post['userId']): string => {
+    if (!userId)
+        return "/";
+    else {
+        return `/user/${userId.firebaseUid}`;
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Post header with user info */}
       <div className="p-4 flex items-center">
-        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-          {post.userId?.photoURL ? (
-            <img
-              src={post.userId?.photoURL}
-              alt={post.userId?.displayName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white">
-              {post.userId?.displayName?.charAt(0) || "?"}
+        {post.userId ? (
+          <>
+            <Link
+              to={getUserProfileUrl(post.userId)}
+              className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              {post.userId?.photoURL ? (
+                <img
+                  src={post.userId.photoURL}
+                  alt={post.userId.displayName || "User"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white">
+                  {post.userId?.displayName?.charAt(0) || "?"}
+                </div>
+              )}
+            </Link>
+            <div className="ml-3">
+              <Link
+                to={getUserProfileUrl(post.userId)}
+                className="font-medium text-gray-900 hover:underline"
+              >
+                {post.userId.displayName || "User"}
+              </Link>
+              <p className="text-xs text-gray-500">
+                {new Date(post.createdAt).toLocaleDateString()}
+              </p>
             </div>
-          )}
-        </div>
-        <div className="ml-3">
-          <p className="font-medium text-gray-900">
-            {post.userId?.displayName}
-          </p>
-          <p className="text-xs text-gray-500">
-            {new Date(post.createdAt).toLocaleDateString()}
-          </p>
-        </div>
+          </>
+        ) : (
+          <>
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+              <div className="w-full h-full flex items-center justify-center bg-gray-400 text-white">
+                ?
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="font-medium text-gray-900">
+                Unknown User
+              </p>
+              <p className="text-xs text-gray-500">
+                {new Date(post.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Video */}
@@ -289,26 +325,46 @@ const PostCard: React.FC<PostCardProps> = ({
               ) : (
                 comments.map((comment) => (
                   <div key={comment._id} className="flex items-start gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-                      {comment.userId.photoURL ? (
-                        <img
-                          src={comment.userId.photoURL}
-                          alt={comment.userId.displayName || "User"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white">
-                          {(comment.userId.displayName || "U")
-                            .charAt(0)
-                            .toUpperCase()}
+                    {comment.userId ? (
+                      <Link
+                        to={getUserProfileUrl(comment.userId)}
+                        className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 hover:opacity-90 transition-opacity"
+                      >
+                        {comment.userId.photoURL ? (
+                          <img
+                            src={comment.userId.photoURL}
+                            alt={comment.userId.displayName || "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white">
+                            {(comment.userId.displayName || "U")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                      </Link>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                        <div className="w-full h-full flex items-center justify-center bg-gray-400 text-white">
+                          ?
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="bg-gray-100 p-2 rounded-lg">
-                        <p className="text-xs font-medium text-gray-900 mb-0.5">
-                          {comment.userId.displayName || "User"}
-                        </p>
+                        {comment.userId ? (
+                          <Link
+                            to={getUserProfileUrl(comment.userId)}
+                            className="text-xs font-medium text-gray-900 mb-0.5 hover:underline"
+                          >
+                            {comment.userId.displayName || "User"}
+                          </Link>
+                        ) : (
+                          <span className="text-xs font-medium text-gray-900 mb-0.5">
+                            Unknown User
+                          </span>
+                        )}
                         <p className="text-sm">{comment.text}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
