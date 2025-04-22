@@ -23,6 +23,8 @@ const Sidebar: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      // Clear UID from local storage.
+      localStorage.removeItem("firebase");
     } catch (error) {
       console.error("Error signing out:", error);
     }
