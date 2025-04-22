@@ -1,9 +1,8 @@
 # SwampTok
 
 ## Overview
-Description Here
-SwampTok is a UF-based social media designed to build a more interactive and connected community.
-Full-Stack Web Application built with Node.js, React, Express, Vite, MongoDB, Firebase, Google Cloud 
+- SwampTok is a UF-based social media designed to build a more interactive and connected community.
+- Full-Stack Web Application built with Node.js, React, Express, Vite, MongoDB, Firebase, Google Cloud 
 
 ## Prerequisites
 To clone the repo to one's local IDE, node.js must be downloaded
