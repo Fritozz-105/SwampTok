@@ -11,6 +11,8 @@ export interface UserData {
     displayName: string | null;
     photoURL?: string | null;
     dateOfBirth?: string;
+    followers?: string[];
+    following?: string[]; 
     bio?: string;
     interests?: string[];
 }

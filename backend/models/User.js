@@ -29,6 +29,16 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+  followers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'User',
+    default: []
+  },
+  following: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'User',
+    default: []
   }
 });
 

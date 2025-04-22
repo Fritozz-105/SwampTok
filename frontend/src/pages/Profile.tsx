@@ -111,6 +111,10 @@ const Profile = () => {
             <p className="text-gray-700">
               {user.bio ? user.bio : "No bio available."}
             </p>
+            <p className="text-gray-600 text-sm">
+            {user.followers?.length || 0} Followers · {user.following?.length || 0} Following
+            </p>
+
           </div>
 
           {/* Interests Section */}
