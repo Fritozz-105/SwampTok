@@ -272,6 +272,7 @@ export const saveEvent = async ({
       };
     }
   };
+
   export const getCalendarEvents = async (firebaseUid: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   
@@ -309,6 +310,7 @@ export const saveEvent = async ({
       };
     }
   };
+
 export const deleteEvent = async (firebaseUid: string, date: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   
@@ -347,7 +349,7 @@ export const deleteEvent = async (firebaseUid: string, date: string) => {
       };
     }
   };
-=======
+
 export const getUserPosts = async (firebaseUid: string) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
