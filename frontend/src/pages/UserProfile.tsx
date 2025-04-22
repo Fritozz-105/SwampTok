@@ -1,18 +1,22 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getUserData, getUserPosts } from "../tools/api";
 import { UserData, Post } from "../types";
 import Layout from "../components/Layout";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
-const Profile = () => {
+const UserProfile = () => {
+  const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserData | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const firebaseUidRef = useRef<string>("");
 
-  const fetchUser = useCallback(async () => {
-    if (!firebaseUidRef.current) {
-      setError("Missing Firebase UID.");
+  const fetchUserData = useCallback(async (uid: string) => {
+    if (!uid) {
+      setError("Missing user ID");
+      setLoading(false);
       return;
     }
 
@@ -20,66 +24,102 @@ const Profile = () => {
     setError(null);
 
     try {
-      const response = await getUserData(firebaseUidRef.current);
+      // Fetch user data
+      const response = await getUserData(uid);
 
       if (response.success && response.user) {
         setUser(response.user as UserData);
 
-        const postsResponse = await getUserPosts(firebaseUidRef.current);
+        // Fetch user posts
+        const postsResponse = await getUserPosts(uid);
         if (postsResponse.success) {
           setUserPosts(postsResponse.posts);
+        } else {
+          console.error("Failed to fetch user posts:", postsResponse.message);
         }
       } else {
-        setError(response.message || "Failed to fetch user data.");
+        setError("User not found");
       }
     } catch (err) {
-      console.error("Error fetching user:", err);
-      setError("An unexpected error occurred.");
+      console.error("Error fetching user profile:", err);
+      setError("Failed to load user profile");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const storedFirebaseUid = localStorage.getItem("firebaseUid") || "";
-    firebaseUidRef.current = storedFirebaseUid;
-
-    if (storedFirebaseUid) {
-      fetchUser();
-    } else {
-      setError("No Firebase UID found. Please log in.");
+    if (userId) {
+      fetchUserData(userId);
     }
-  }, [fetchUser]);
+  }, [userId, fetchUserData]);
+
+  const handleGoBack = () => {
+    navigate(-1); // Navigate back to the previous page
+  };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-      </div>
+      <Layout>
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500">{error}</p>
-      </div>
+      <Layout>
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            Back
+          </button>
+          <div className="flex justify-center items-center py-20">
+            <p className="text-red-500 text-center">{error}</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-gray-500">No user data available.</p>
-      </div>
+      <Layout>
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            Back
+          </button>
+          <div className="flex justify-center items-center py-20">
+            <p className="text-gray-500 text-center">User not found</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   return (
     <Layout>
       <div className="max-w-4xl mx-auto py-8 px-4">
+        {/* Back button */}
+        <button
+          onClick={handleGoBack}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back
+        </button>
+
         <h1 className="text-3xl font-bold mb-8 text-center">
-          {user.displayName || "No name provided"}
+          {user.displayName || "User"}
         </h1>
 
         <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
@@ -92,17 +132,11 @@ const Profile = () => {
               />
             ) : (
               <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-gray-400">No Photo</span>
+                <span className="text-gray-400 text-2xl">
+                  {user.displayName?.charAt(0).toUpperCase() || "?"}
+                </span>
               </div>
             )}
-
-            <div className="text-center">
-              <p className="text-gray-500 text-sm">
-                {user.dateOfBirth
-                  ? `Birthday: ${new Date(user.dateOfBirth).toLocaleDateString()}`
-                  : "Date of birth: Unknown"}
-              </p>
-            </div>
           </div>
 
           {/* Bio Section */}
@@ -155,10 +189,17 @@ const Profile = () => {
                   {post.caption && (
                     <p className="font-semibold break-words">{post.caption}</p>
                   )}
-                  {post.tags && (
-                    <p className="text-sm text-gray-400 mt-1 break-words">
-                      {post.tags}
-                    </p>
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {post.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="bg-gray-100 text-blue-600 px-2 py-1 rounded-md text-xs"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               ))}
@@ -170,4 +211,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default UserProfile;

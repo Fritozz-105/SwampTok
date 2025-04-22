@@ -15,7 +15,7 @@ export const validateAuth = <T extends z.ZodSchema>(
     try {
         schema.parse(data);
         if (setErrors) {
-        setErrors({});
+            setErrors({});
         }
         return { isValid: true };
     } catch (error) {
