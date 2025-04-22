@@ -7,7 +7,6 @@ Full-Stack Web Application built with Node.js, React, Express, Vite, MongoDB, Fi
 
 ## Prerequisites
 To clone the repo to one's local IDE, node.js must be downloaded
----
 Refer to https://nodejs.org/en/ to install Node.js
 
 ### Installation
@@ -32,9 +31,9 @@ npm run dev
 ```
 
 ## Project Features
-Login and Sign up Page Is Fully Functional
-Users can upload images and videos
-Home Page designed for those following is functional
-Explore Page designed for public accounts is up and running
-Calendar Page is fully functional
-Setting and Help Page are also completely functional
+- Login and Sign up Page is fully functional
+- Users can upload images and videos
+- Home Page designed for those following is functional
+- Explore Page designed for public accounts is up and running
+- Calendar Page is fully functional
+- Setting and Help Page are also completely functional
