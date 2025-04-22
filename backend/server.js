@@ -7,6 +7,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
+const followRoutes = require('./routes/followRoutes');
 
 
 // Import middleware
@@ -27,6 +28,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/follow', followRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

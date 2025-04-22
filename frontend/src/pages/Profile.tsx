@@ -100,6 +100,10 @@ const Profile = () => {
                 ? `Birthday: ${new Date(user.dateOfBirth).toLocaleDateString()}`
                 : "date of birth.. Unknown"}
             </p>
+            <p className="text-gray-600 text-sm">
+            {user.followers?.length || 0} Followers · {user.following?.length || 0} Following
+            </p>
+
           </div>
         </div>
       </div>

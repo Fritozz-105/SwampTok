@@ -10,6 +10,8 @@ export interface UserData {
     displayName: string | null;
     photoURL?: string | null;
     dateOfBirth?: string;
+    followers?: string[];    // ✅ Add this
+    following?: string[]; 
 }
 
 export interface Comment {
